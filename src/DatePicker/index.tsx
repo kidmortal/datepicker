@@ -26,12 +26,17 @@ const Header = styled.div`
 const HeaderLabel = styled.div`
   display: flex;
   flex-direction: row;
+  align-items: center;
 `;
 
 const HeaderMonth = styled.div`
   padding-right: 1rem;
+  font-size: 24px;
 `;
-const HeaderYear = styled.div``;
+const HeaderYear = styled.div`
+  font-size: 24px;
+  color: pink;
+`;
 
 const HeaderIcon = styled.div`
   display: flex;
@@ -53,18 +58,19 @@ const WeekdaysLabels = styled.div`
 
 const WeekdayLabel = styled.div`
   width: 100%;
-  font-size: 14px;
+  font-size: 18px;
   display: flex;
   flex-direction: row;
   justify-content: center;
   align-items: center;
 `;
 
-const WeekLine = styled.div`
+const DaysContainer = styled.div`
   display: grid;
   grid-template-columns: repeat(7, 1fr);
   gap: 0.625rem;
   padding: 0.5rem 0.5rem;
+  margin-bottom: 1rem;
 `;
 
 type DaySlotProps = {
@@ -104,7 +110,19 @@ const MonthNames = [
   "Dezembro",
 ];
 
-export function DatePicker() {
+type DatePickerProps = {
+  first: string;
+  last: string;
+  setFirst: (first: string) => void;
+  setLast: (last: string) => void;
+};
+
+export function DatePicker({
+  first,
+  last,
+  setFirst,
+  setLast,
+}: DatePickerProps) {
   const [month, setMonth] = useState(9);
   const [year, setYear] = useState(2021);
 
@@ -132,7 +150,17 @@ export function DatePicker() {
     return (
       <>
         {Days.map((day) =>
-          day === 0 ? <DaySlot empty></DaySlot> : <DaySlot>{day}</DaySlot>
+          day === 0 ? (
+            <DaySlot empty></DaySlot>
+          ) : (
+            <DaySlot
+              onClick={() => {
+                HandleSelectDay(day);
+              }}
+            >
+              {day}
+            </DaySlot>
+          )
         )}
       </>
     );
@@ -140,15 +168,26 @@ export function DatePicker() {
 
   function HandlePreviousMonth() {
     if (month > 0) {
-      setMonth(month - 1);
+      return setMonth(month - 1);
     }
+    setMonth(11);
+    setYear(year - 1);
   }
+
   function HandleNextMonth() {
     if (month < 11) {
       return setMonth(month + 1);
     }
     setMonth(0);
     setYear(year + 1);
+  }
+
+  function HandleSelectDay(day: number) {
+    setFirst(`${day}/${FormatMonth(month + 1)}/${year}`);
+  }
+
+  function FormatMonth(number: number): string {
+    return number > 9 ? `${number}` : `0${number}`;
   }
 
   return (
@@ -163,7 +202,7 @@ export function DatePicker() {
       </Header>
       <MonthContainer>
         <WeekdaysLabels>{RenderWeekDays()}</WeekdaysLabels>
-        <WeekLine>{RenderDays()}</WeekLine>
+        <DaysContainer>{RenderDays()}</DaysContainer>
       </MonthContainer>
     </Container>
   );
