@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import styled from "styled-components";
 
 const Container = styled.div`
@@ -70,7 +70,7 @@ const WeekdayLabel = styled.div`
 const DaysContainer = styled.div`
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: 0.625rem;
+  gap: 0.625rem 0;
   padding: 0.5rem 0.5rem;
   margin-bottom: 1rem;
 `;
@@ -84,23 +84,42 @@ function CursorType(status: Status) {
       return "not-allowed";
 
     default:
-      return "cursor";
+      return "pointer";
   }
 }
 
-function BackgroundColor(status: Status) {
+function BackgroundHoverColor(status: Status) {
   switch (status) {
     case "EMPTY":
       return "";
     case "DISABLED":
       return "";
+    case "SELECTED":
+      return "#3697eb";
 
     default:
       return "#75bcfc";
   }
 }
+function BackgroundColor(status: Status) {
+  switch (status) {
+    case "EMPTY":
+      return "";
+    case "ALLOWED":
+      return "";
+    case "DISABLED":
+      return "";
+    case "SELECTED":
+      return "#3697eb";
+    case "BETWEEN":
+      return "#e780e2";
 
-type Status = "EMPTY" | "DISABLED" | "SELECTED" | "ALLOWED";
+    default:
+      return "";
+  }
+}
+
+type Status = "EMPTY" | "DISABLED" | "SELECTED" | "ALLOWED" | "BETWEEN";
 
 type DaySlotProps = {
   status: Status;
@@ -117,9 +136,11 @@ const DaySlot = styled.div<DaySlotProps>`
   transition: 0.1s;
   font-size: 18px;
   font-weight: 500;
+  opacity: ${(props) => (props.status === "DISABLED" ? 0.5 : 1)};
   cursor: ${(props) => CursorType(props.status)};
+  background-color: ${(props) => BackgroundColor(props.status)};
   &:hover {
-    background-color: ${(props) => BackgroundColor(props.status)};
+    background-color: ${(props) => BackgroundHoverColor(props.status)};
   }
 `;
 
@@ -139,10 +160,10 @@ const MonthNames = [
 ];
 
 type DatePickerProps = {
-  first: string;
-  last: string;
-  setFirst: (first: string) => void;
-  setLast: (last: string) => void;
+  first?: Date;
+  last?: Date;
+  setFirst: (first: Date) => void;
+  setLast: (last: Date) => void;
 };
 
 export function DatePicker({
@@ -152,6 +173,7 @@ export function DatePicker({
   setLast,
 }: DatePickerProps) {
   const Today = new Date();
+  const [hoveredDate, setHoveredDate] = useState<Date>(new Date());
   const [month, setMonth] = useState(9);
   const [year, setYear] = useState(2021);
 
@@ -182,11 +204,38 @@ export function DatePicker({
     const DateDay = new Date(`${month + 1}/${day}/${year}`);
     if (DateDay.getTime() < Today.getTime())
       return <DaySlot status="DISABLED">{day}</DaySlot>;
+
+    if (first) {
+      if (DateDay.getTime() === first.getTime())
+        return <DaySlot status="SELECTED">{day}</DaySlot>;
+
+      if (
+        DateDay.getTime() > first.getTime() &&
+        DateDay.getTime() < hoveredDate.getTime()
+      )
+        return (
+          <DaySlot
+            status="BETWEEN"
+            onClick={() => {
+              HandleSelectDay(DateDay);
+            }}
+            onMouseEnter={() => {
+              setHoveredDate(DateDay);
+            }}
+          >
+            {day}
+          </DaySlot>
+        );
+    }
+
     return (
       <DaySlot
         status="ALLOWED"
         onClick={() => {
-          HandleSelectDay(day);
+          HandleSelectDay(DateDay);
+        }}
+        onMouseEnter={() => {
+          setHoveredDate(DateDay);
         }}
       >
         {day}
@@ -210,12 +259,8 @@ export function DatePicker({
     setYear(year + 1);
   }
 
-  function HandleSelectDay(day: number) {
-    setFirst(`${day}/${FormatMonth(month + 1)}/${year}`);
-  }
-
-  function FormatMonth(number: number): string {
-    return number > 9 ? `${number}` : `0${number}`;
+  function HandleSelectDay(DateDay: Date) {
+    setFirst(DateDay);
   }
 
   return (

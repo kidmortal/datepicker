@@ -11,11 +11,11 @@ const Container = styled.div`
 `;
 
 function App() {
-  const [first, setFirst] = useState("");
-  const [last, setLast] = useState("");
+  const [first, setFirst] = useState<Date | undefined>(undefined);
+  const [last, setLast] = useState<Date | undefined>(undefined);
   return (
     <Container>
-      <h1>{first}</h1>
+      <h1>{first?.getDay()}</h1>
       <h1>{last}</h1>
       <DatePicker
         first={first}
