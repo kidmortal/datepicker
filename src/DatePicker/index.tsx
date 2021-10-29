@@ -7,6 +7,8 @@ const Container = styled.div`
   font-family: "Open Sans";
   box-shadow: 0 0 12px 0 rgb(0, 0, 0, 50%);
   border-radius: 0 0 5px 5px;
+  position: absolute;
+  top: 55vh;
 `;
 
 const Header = styled.div`
@@ -73,8 +75,35 @@ const DaysContainer = styled.div`
   margin-bottom: 1rem;
 `;
 
+function CursorType(status: Status) {
+  switch (status) {
+    case "EMPTY":
+      return "";
+
+    case "DISABLED":
+      return "not-allowed";
+
+    default:
+      return "cursor";
+  }
+}
+
+function BackgroundColor(status: Status) {
+  switch (status) {
+    case "EMPTY":
+      return "";
+    case "DISABLED":
+      return "";
+
+    default:
+      return "#75bcfc";
+  }
+}
+
+type Status = "EMPTY" | "DISABLED" | "SELECTED" | "ALLOWED";
+
 type DaySlotProps = {
-  empty?: boolean;
+  status: Status;
 };
 
 const DaySlot = styled.div<DaySlotProps>`
@@ -88,10 +117,9 @@ const DaySlot = styled.div<DaySlotProps>`
   transition: 0.1s;
   font-size: 18px;
   font-weight: 500;
-  cursor: ${(props) => (props.empty ? "" : "pointer")};
-
+  cursor: ${(props) => CursorType(props.status)};
   &:hover {
-    background-color: ${(props) => (props.empty ? "" : "#75bcfc")};
+    background-color: ${(props) => BackgroundColor(props.status)};
   }
 `;
 
@@ -123,6 +151,7 @@ export function DatePicker({
   setFirst,
   setLast,
 }: DatePickerProps) {
+  const Today = new Date();
   const [month, setMonth] = useState(9);
   const [year, setYear] = useState(2021);
 
@@ -143,26 +172,25 @@ export function DatePicker({
     const DaysInMonth = TargetMonth.getDate();
     const FirstWeekDay = TargetMonth.getDay();
     let Days = Array.from(Array(DaysInMonth).keys());
-    Days.shift();
-    const EmptyDays = Array.from(Array(FirstWeekDay).keys());
-    const EmptyBlocks = EmptyDays.map((day) => 0);
-    Days = [...EmptyBlocks, ...Days];
+    const EmptyDays = new Array(FirstWeekDay).fill(-1);
+    Days = [...EmptyDays, ...Days];
+    return <>{Days.map((day) => DayShouldRender(day + 1))}</>;
+  }
+
+  function DayShouldRender(day: number) {
+    if (day === 0) return <DaySlot status="EMPTY"></DaySlot>;
+    const DateDay = new Date(`${month + 1}/${day}/${year}`);
+    if (DateDay.getTime() < Today.getTime())
+      return <DaySlot status="DISABLED">{day}</DaySlot>;
     return (
-      <>
-        {Days.map((day) =>
-          day === 0 ? (
-            <DaySlot empty></DaySlot>
-          ) : (
-            <DaySlot
-              onClick={() => {
-                HandleSelectDay(day);
-              }}
-            >
-              {day}
-            </DaySlot>
-          )
-        )}
-      </>
+      <DaySlot
+        status="ALLOWED"
+        onClick={() => {
+          HandleSelectDay(day);
+        }}
+      >
+        {day}
+      </DaySlot>
     );
   }
 
